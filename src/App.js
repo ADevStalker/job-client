@@ -18,8 +18,8 @@ function App() {
   });
 
   React.useEffect(() => {
-    if (lastMessage && lastMessage.data === 'GET') {
-      console.log('Received GET event message.');
+    console.log('Received GET event message.', lastMessage);
+    if (lastMessage) {
       // handle GET event message
       if (Notification.permission === 'granted') {
         new Notification('Job List Refreshed', {
