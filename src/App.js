@@ -1,39 +1,50 @@
 import React from 'react';
-import {
-  ChakraProvider,
-  Box,
-  Text,
-  Link,
-  VStack,
-  Code,
-  Grid,
-  theme,
-} from '@chakra-ui/react';
-import { ColorModeSwitcher } from './ColorModeSwitcher';
-import { Logo } from './Logo';
+import { ChakraProvider, CSSReset, Box } from '@chakra-ui/react';
+import JobList from './JobList';
+import useWebSocket from 'react-use-websocket';
 
 function App() {
+  const socketUrl = 'ws://23d4-146-19-247-59.ngrok-free.app';
+  const {
+    sendMessage,
+    sendJsonMessage,
+    lastMessage,
+    lastJsonMessage,
+    readyState,
+    getWebSocket,
+  } = useWebSocket(socketUrl, {
+    onOpen: () => console.log('WebSocket opened'),
+    shouldReconnect: closeEvent => true,
+  });
+
+  React.useEffect(() => {
+    if (lastMessage && lastMessage.data === 'GET') {
+      console.log('Received GET event message.');
+      // handle GET event message
+      if (Notification.permission === 'granted') {
+        new Notification('Job List Refreshed', {
+          body: 'New Upwork jobs are available.',
+          icon: 'notification-icon.png',
+        });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification('Job List Refreshed', {
+              body: 'New Upwork jobs are available.',
+              icon: 'notification-icon.png',
+            });
+          }
+        });
+      }
+    }
+  }, [lastMessage]);
+
+  if (!lastMessage) return <>Loading...</>;
   return (
-    <ChakraProvider theme={theme}>
-      <Box textAlign="center" fontSize="xl">
-        <Grid minH="100vh" p={3}>
-          <ColorModeSwitcher justifySelf="flex-end" />
-          <VStack spacing={8}>
-            <Logo h="40vmin" pointerEvents="none" />
-            <Text>
-              Edit <Code fontSize="xl">src/App.js</Code> and save to reload.
-            </Text>
-            <Link
-              color="teal.500"
-              href="https://chakra-ui.com"
-              fontSize="2xl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learn Chakra
-            </Link>
-          </VStack>
-        </Grid>
+    <ChakraProvider>
+      <CSSReset />
+      <Box p={8}>
+        <JobList jobs={lastJsonMessage} />
       </Box>
     </ChakraProvider>
   );
